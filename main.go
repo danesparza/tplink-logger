@@ -9,6 +9,7 @@ import (
 	"github.com/danesparza/tplink"
 	"github.com/hashicorp/logutils"
 	influxdb "github.com/influxdata/influxdb/client/v2"
+	"github.com/montanaflynn/stats"
 )
 
 var (
@@ -17,6 +18,9 @@ var (
 	influxURL      = flag.String("influxurl", "", "InfluxDB url - Ex: http://yourserver:8086")
 	influxDatabase = flag.String("influxdb", "sensors", "Influx database to log to")
 	loglevel       = flag.String("loglevel", "INFO", "Set the console log level")
+
+	//	Variables
+	maxPoints = 300 // 5 minute moving average
 )
 
 func main() {
@@ -34,6 +38,12 @@ func main() {
 		Writer:   os.Stderr,
 	}
 	log.SetOutput(filter)
+
+	//	Keep track of the values over time
+	//	-- initialize the slice size to be maxPoints
+	tcurrent := make([]float64, maxPoints)
+	tvolts := make([]float64, maxPoints)
+	tpower := make([]float64, maxPoints)
 
 	//	Emit settings:
 	log.Printf("Loglevel: %s", *loglevel)
@@ -53,6 +63,42 @@ func main() {
 		meter, err := plug.Meter()
 		if err != nil {
 			log.Fatalf("[ERROR] failed: %s\n", err)
+		}
+
+		//	Track the measurements
+		tcurrent = append(tcurrent, meter.Current)
+		tvolts = append(tvolts, meter.Voltage)
+		tpower = append(tpower, meter.Power)
+
+		//	Calculate standard deviation
+		tcurrentmean, err := stats.Mean(tcurrent)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tvoltsmean, err := stats.Mean(tvolts)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tpowermean, err := stats.Mean(tpower)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		//	Keep a rolling collection of data...
+		//	If we already have maxPoints items
+		//	remove the first item:
+		if len(tcurrent) > maxPoints {
+			tcurrent = tcurrent[1:]
+		}
+
+		if len(tvolts) > maxPoints {
+			tvolts = tvolts[1:]
+		}
+
+		if len(tpower) > maxPoints {
+			tpower = tpower[1:]
 		}
 
 		if *influxURL != "" {
@@ -75,6 +121,9 @@ func main() {
 				"voltage": meter.Voltage,
 				"power":   meter.Power,
 				"total":   meter.Total,
+				"cmean":   tcurrentmean,
+				"vmean":   tvoltsmean,
+				"pmean":   tpowermean,
 			}
 
 			pt, err := influxdb.NewPoint("tplink-HS110", tags, fields, time.Now())
@@ -89,6 +138,6 @@ func main() {
 			}
 		}
 
-		log.Printf("[DEBUG] Result: %+v\n", meter)
+		log.Printf("[DEBUG]\n Direct reading: %+v\n Means: current: %v volts: %v power: %v\n\n", meter, tcurrentmean, tvoltsmean, tpowermean)
 	}
 }
