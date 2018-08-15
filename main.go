@@ -62,7 +62,7 @@ func main() {
 	for range time.Tick(time.Second * 1) {
 		meter, err := plug.Meter()
 		if err != nil {
-			log.Fatalf("[ERROR] failed: %s\n", err)
+			log.Printf("[ERROR] failed: %s\n", err)
 		}
 
 		//	Track the measurements
@@ -73,17 +73,17 @@ func main() {
 		//	Calculate standard deviation
 		tcurrentmean, err := stats.Mean(tcurrent)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("[ERROR] failed calculating current mean: %s", err)
 		}
 
 		tvoltsmean, err := stats.Mean(tvolts)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("[ERROR] failed calculating volts mean: %s", err)
 		}
 
 		tpowermean, err := stats.Mean(tpower)
 		if err != nil {
-			log.Fatal(err)
+			log.Printf("[ERROR] failed calculating power mean: %s", err)
 		}
 
 		//	Keep a rolling collection of data...
@@ -108,7 +108,7 @@ func main() {
 				Precision: "s",
 			})
 			if err != nil {
-				log.Fatalf("[ERROR] Creating batch point failed: %s", err)
+				log.Printf("[ERROR] Creating batch point failed: %s", err)
 			}
 
 			// Create a point and add to batch
