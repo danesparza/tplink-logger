@@ -1,4 +1,4 @@
-# tplink-logger
+# tplink-logger [![CircleCI](https://circleci.com/gh/danesparza/tplink-logger.svg?style=shield)](https://circleci.com/gh/danesparza/tplink-logger)
 InfluxDB logger for HS110 energy monitoring outlet
 
 ## Quick start
