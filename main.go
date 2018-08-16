@@ -60,17 +60,23 @@ func main() {
 
 	log.Printf("[INFO] Collecting data and logging...\n")
 	for range time.Tick(time.Second * 1) {
+
+		log.Printf("[DEBUG] Preparing to collect data...\n")
 		meter, err := plug.Meter()
 		if err != nil {
 			log.Printf("[ERROR] failed: %s\n", err)
 		}
+		log.Printf("[DEBUG] Collected data\n")
 
 		//	Track the measurements
+		log.Printf("[DEBUG] Tracking measurements...\n")
 		tcurrent = append(tcurrent, meter.Current)
 		tvolts = append(tvolts, meter.Voltage)
 		tpower = append(tpower, meter.Power)
+		log.Printf("[DEBUG] Tracked\n")
 
-		//	Calculate standard deviation
+		//	Calculate mean
+		log.Printf("[DEBUG] Calculating means...\n")
 		tcurrentmean, err := stats.Mean(tcurrent)
 		if err != nil {
 			log.Printf("[ERROR] failed calculating current mean: %s", err)
@@ -85,10 +91,12 @@ func main() {
 		if err != nil {
 			log.Printf("[ERROR] failed calculating power mean: %s", err)
 		}
+		log.Printf("[DEBUG] Calculated means\n")
 
 		//	Keep a rolling collection of data...
 		//	If we already have maxPoints items
 		//	remove the first item:
+		log.Printf("[DEBUG] Trimming slices...\n")
 		if len(tcurrent) > maxPoints {
 			tcurrent = tcurrent[1:]
 		}
@@ -100,9 +108,11 @@ func main() {
 		if len(tpower) > maxPoints {
 			tpower = tpower[1:]
 		}
+		log.Printf("[DEBUG] Slices trimmed\n")
 
 		if *influxURL != "" {
 			// Create a new point batch
+			log.Printf("[DEBUG] Creating batch points for InfluxDB...\n")
 			bp, err := influxdb.NewBatchPoints(influxdb.BatchPointsConfig{
 				Database:  *influxDatabase,
 				Precision: "s",
@@ -126,6 +136,7 @@ func main() {
 				"pmean":   tpowermean,
 			}
 
+			log.Printf("[DEBUG] Creating point for InfluxDB...\n")
 			pt, err := influxdb.NewPoint("tplink-HS110", tags, fields, time.Now())
 			if err != nil {
 				log.Fatal(err)
@@ -133,9 +144,11 @@ func main() {
 			bp.AddPoint(pt)
 
 			// Write the batch
+			log.Printf("[DEBUG] Writing point for InfluxDB...\n")
 			if err := c.Write(bp); err != nil {
 				log.Printf("[WARN] Problem writing to InfluxDB server: %v", err)
 			}
+			log.Printf("[DEBUG] Wrote point to InfluxDB...\n")
 		}
 
 		log.Printf("[DEBUG]\n Direct reading: %+v\n Means: current: %v volts: %v power: %v\n\n", meter, tcurrentmean, tvoltsmean, tpowermean)
