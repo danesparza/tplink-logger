@@ -139,7 +139,7 @@ func main() {
 			log.Printf("[DEBUG] Creating point for InfluxDB...\n")
 			pt, err := influxdb.NewPoint("tplink-HS110", tags, fields, time.Now())
 			if err != nil {
-				log.Fatal(err)
+				log.Printf("[ERROR] Creating new point failed: %s", err)
 			}
 			bp.AddPoint(pt)
 
