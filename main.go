@@ -64,7 +64,8 @@ func main() {
 		log.Printf("[DEBUG] Preparing to collect data...\n")
 		meter, err := plug.Meter()
 		if err != nil {
-			log.Printf("[ERROR] failed: %s\n", err)
+			log.Printf("[ERROR] failed: %s - retrying\n", err)
+			continue
 		}
 		log.Printf("[DEBUG] Collected data\n")
 
