@@ -29,10 +29,10 @@ func main() {
 	//	Parse the command line for flags:
 	flag.Parse()
 
-	//	Instead of logging, scan for hosts for 10 seconds and dump to the console
+	//	Instead of logging, scan for hosts for 30 seconds and dump to the console
 	if *scan == true {
 		log.Printf("Scanning for hosts...\n")
-		devices, err := tplink.Scan(time.Second * 10)
+		devices, err := tplink.Scan(time.Second * 30)
 		if err != nil {
 			log.Panicf("Problem scanning: %s", err)
 		}
