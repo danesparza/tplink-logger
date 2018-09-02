@@ -18,6 +18,7 @@ var (
 	influxURL      = flag.String("influxurl", "", "InfluxDB url - Ex: http://yourserver:8086")
 	influxDatabase = flag.String("influxdb", "sensors", "Influx database to log to")
 	loglevel       = flag.String("loglevel", "INFO", "Set the console log level")
+	scan           = flag.Bool("scan", false, "Scan for hosts instead of logging")
 
 	//	Variables
 	maxPoints = 300 // 5 minute moving average
@@ -27,6 +28,23 @@ func main() {
 
 	//	Parse the command line for flags:
 	flag.Parse()
+
+	//	Instead of logging, scan for hosts for 10 seconds and dump to the console
+	if *scan == true {
+		log.Printf("Scanning for hosts...\n")
+		devices, err := tplink.Scan(time.Second * 10)
+		if err != nil {
+			log.Panicf("Problem scanning: %s", err)
+		}
+
+		log.Printf("Found %v hosts", len(devices))
+
+		for _, device := range devices {
+			log.Printf("Found device: %+v", device)
+		}
+
+		return
+	}
 
 	//	Gather hostname
 	hostname, _ := os.Hostname()
